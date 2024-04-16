@@ -6,11 +6,14 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
+import static com.mongodb.client.model.Updates.*;
 import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Filters.and;
 
 
 public class ProductForm3 extends JFrame {
@@ -20,7 +23,7 @@ public class ProductForm3 extends JFrame {
     private JTextField idField, nameField, priceField, descriptionField;
 
     public ProductForm3() {
-        setTitle("Add Product");
+        setTitle("CRUD MongoDB + JAVA");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -67,7 +70,7 @@ public class ProductForm3 extends JFrame {
         updateButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                addProduct();
+                updateProduct();
             }
         });
         panel.add(updateButton);
@@ -143,6 +146,38 @@ public class ProductForm3 extends JFrame {
 
         }
     }
+
+    private void updateProduct() {
+        try (MongoClient mongoClient = MongoClients.create(MONGO_URI)){
+            MongoDatabase database = mongoClient.getDatabase(DATABASE);
+            MongoCollection<Document> collection = database.getCollection(COLLECTION);
+
+            String name = nameField.getText();
+            double price = Double.parseDouble(priceField.getText());
+            String description = descriptionField.getText();
+
+            String id = idField.getText();
+            ObjectId objectId = new ObjectId(id);
+            Bson filter = eq("_id", objectId);
+
+            Bson updateOperation = combine(
+                    set("name", name),
+                    set("price", price),
+                    set("description", description)
+            );
+
+            UpdateResult document = collection.updateOne(filter, updateOperation);
+            System.out.println(document);
+
+            JOptionPane.showConfirmDialog(this, "Product updated successfully!: " + document);
+            clearFields();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error occurred: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+
+        }
+    }
+
+
 
     private void clearFields() {
         nameField.setText("");
